@@ -1,0 +1,4 @@
+{
+  "AUTH_API_URL": "'https://auth.savitar.io/api/v1'",
+  "API_URL": "'https://api.savitar.io/api/v2'"
+}
