@@ -1,5 +1,5 @@
 {
-  "name": "@savitar.exchange/savitar-api-client",
+  "name": "savitar-api-client",
   "version": "0.0.1",
   "description": "Savitar Exchange API client for browser and Node",
   "main": "dist/savitar.cjs.js",
@@ -37,5 +37,5 @@
   "bugs": {
     "url": "https://github.com/savitar-exchange/javascript-api-sdk/issues"
   },
-  "homepage": "https://github.com/Savitar-exchange/javascript-api-sdk#readme"
+  "homepage": "https://github.com/savitar-exchange/javascript-api-sdk#readme"
 }

@@ -23,9 +23,9 @@ The official Node.js/Browser library for Savitar's API.
 We are [browserify](http://browserify.org/)able and [webpack](http://webpack.github.io/) friendly.
 
 ```sh
-npm install @savitar.exchange/savitar-api-client --save
+npm install savitar-api-client --save
 # OR
-yarn add @savitar.exchange/savitar-api-client
+yarn add savitar-api-client
 ```
 #### &lt;script&gt; tag using CDNs
 
@@ -34,7 +34,7 @@ yarn add @savitar.exchange/savitar-api-client
 [jsDelivr](http://www.jsdelivr.com/about.php) is a global CDN delivery for JavaScript libraries.
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/@savitar.exchange/savitar-api-client/dist/savitar.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/savitar-api-client/dist/savitar.min.js"></script>
 ```
 
 ## Quick Start
@@ -44,9 +44,9 @@ yarn add @savitar.exchange/savitar-api-client
 You first need to initialize the client. For that you need your **Application ID** and **Application Secret**.
 
 ```js
-var savitar = require('@savitar.exchange/savitar-api-client');
+var savitar = require('savitar-api-client');
 // OR
-import * as savitar from '@savitar.exchange/savitar-api-client';
+import * as savitar from 'savitar-api-client';
 
 
 var publicClient = new savitar.PublicClient();
