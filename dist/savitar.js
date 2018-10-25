@@ -518,8 +518,164 @@ var savitar = (function (exports) {
 
 	var browser = window.fetch || (window.fetch = require$$0$1.default || require$$0$1);
 
-	var request = function (method, path, body, token) {
+	// Copyright Joyent, Inc. and other Node contributors.
+
+	// If obj.hasOwnProperty has been overridden, then calling
+	// obj.hasOwnProperty(prop) will break.
+	// See: https://github.com/joyent/node/issues/1707
+	function hasOwnProperty(obj, prop) {
+	  return Object.prototype.hasOwnProperty.call(obj, prop);
+	}
+
+	var decode = function(qs, sep, eq, options) {
+	  sep = sep || '&';
+	  eq = eq || '=';
+	  var obj = {};
+
+	  if (typeof qs !== 'string' || qs.length === 0) {
+	    return obj;
+	  }
+
+	  var regexp = /\+/g;
+	  qs = qs.split(sep);
+
+	  var maxKeys = 1000;
+	  if (options && typeof options.maxKeys === 'number') {
+	    maxKeys = options.maxKeys;
+	  }
+
+	  var len = qs.length;
+	  // maxKeys <= 0 means that we should not limit keys count
+	  if (maxKeys > 0 && len > maxKeys) {
+	    len = maxKeys;
+	  }
+
+	  for (var i = 0; i < len; ++i) {
+	    var x = qs[i].replace(regexp, '%20'),
+	        idx = x.indexOf(eq),
+	        kstr, vstr, k, v;
+
+	    if (idx >= 0) {
+	      kstr = x.substr(0, idx);
+	      vstr = x.substr(idx + 1);
+	    } else {
+	      kstr = x;
+	      vstr = '';
+	    }
+
+	    k = decodeURIComponent(kstr);
+	    v = decodeURIComponent(vstr);
+
+	    if (!hasOwnProperty(obj, k)) {
+	      obj[k] = v;
+	    } else if (isArray(obj[k])) {
+	      obj[k].push(v);
+	    } else {
+	      obj[k] = [obj[k], v];
+	    }
+	  }
+
+	  return obj;
+	};
+
+	var isArray = Array.isArray || function (xs) {
+	  return Object.prototype.toString.call(xs) === '[object Array]';
+	};
+
+	// Copyright Joyent, Inc. and other Node contributors.
+
+	var stringifyPrimitive = function(v) {
+	  switch (typeof v) {
+	    case 'string':
+	      return v;
+
+	    case 'boolean':
+	      return v ? 'true' : 'false';
+
+	    case 'number':
+	      return isFinite(v) ? v : '';
+
+	    default:
+	      return '';
+	  }
+	};
+
+	var encode = function(obj, sep, eq, name) {
+	  sep = sep || '&';
+	  eq = eq || '=';
+	  if (obj === null) {
+	    obj = undefined;
+	  }
+
+	  if (typeof obj === 'object') {
+	    return map(objectKeys(obj), function(k) {
+	      var ks = encodeURIComponent(stringifyPrimitive(k)) + eq;
+	      if (isArray$1(obj[k])) {
+	        return map(obj[k], function(v) {
+	          return ks + encodeURIComponent(stringifyPrimitive(v));
+	        }).join(sep);
+	      } else {
+	        return ks + encodeURIComponent(stringifyPrimitive(obj[k]));
+	      }
+	    }).join(sep);
+
+	  }
+
+	  if (!name) return '';
+	  return encodeURIComponent(stringifyPrimitive(name)) + eq +
+	         encodeURIComponent(stringifyPrimitive(obj));
+	};
+
+	var isArray$1 = Array.isArray || function (xs) {
+	  return Object.prototype.toString.call(xs) === '[object Array]';
+	};
+
+	function map (xs, f) {
+	  if (xs.map) return xs.map(f);
+	  var res = [];
+	  for (var i = 0; i < xs.length; i++) {
+	    res.push(f(xs[i], i));
+	  }
+	  return res;
+	}
+
+	var objectKeys = Object.keys || function (obj) {
+	  var res = [];
+	  for (var key in obj) {
+	    if (Object.prototype.hasOwnProperty.call(obj, key)) res.push(key);
+	  }
+	  return res;
+	};
+
+	var querystringEs3 = createCommonjsModule(function (module, exports) {
+
+	exports.decode = exports.parse = decode;
+	exports.encode = exports.stringify = encode;
+	});
+	var querystringEs3_1 = querystringEs3.decode;
+	var querystringEs3_2 = querystringEs3.parse;
+	var querystringEs3_3 = querystringEs3.encode;
+	var querystringEs3_4 = querystringEs3.stringify;
+
+	function cleanEmptyParams (params) {
+	  if (params === undefined || params === null || params === {}) {
+	    return null
+	  }
+
+	  Object.keys(params).map(function (key) {
+	    var value = params[key];
+	    if (value === undefined || value === null) {
+	      delete params[key];
+	    }
+	  });
+
+	  return params
+	}
+
+	var request = function (method, path, params, token) {
 	  var url = '';
+
+	  params = cleanEmptyParams(params);
 
 	  if (path === '/sessions/generate_jwt') {
 	    url = 'https://auth.savitar.io/api/v1' + path;
@@ -535,7 +691,10 @@ var savitar = (function (exports) {
 	    headers['Authorization'] = 'Bearer ' + token;
 	  }
 
-	  body = method === 'POST' ? JSON.stringify(body) : null;
+	  var body = method === 'POST' ? JSON.stringify(params) : null;
+	  if (method === 'GET' && params !== null) {
+	    url = url + '?' + querystringEs3.stringify(params);
+	  }
 
 	  return browser(url, {
 	    method: method,
@@ -555,8 +714,61 @@ var savitar = (function (exports) {
 	function PublicClient () {
 	}
 
+	PublicClient.prototype.timestamp = function () {
+	  return request('GET', '/timestamp', null, null)
+	};
+
+	PublicClient.prototype.currencies = function () {
+	  return request('GET', '/currencies', null, null)
+	};
+
+	PublicClient.prototype.getCurrency = function (currency) {
+	  return request('GET', '/currencies/' + currency, null, null)
+	};
+
 	PublicClient.prototype.getMarkets = function () {
 	  return request('GET', '/markets', null, null)
+	};
+
+	PublicClient.prototype.getMarketFees = function (m) {
+	  return request('GET', '/fees/trading', null, null)
+	};
+
+	PublicClient.prototype.getTicker = function (market) {
+	  return request('GET', '/tickers/' + market, null, null)
+	};
+
+	PublicClient.prototype.getAllTickers = function () {
+	  return request('GET', '/tickers', null, null)
+	};
+
+	PublicClient.prototype.getOrderBook = function (market) {
+	  return request('GET', '/order_book', { market: market }, null)
+	};
+
+	PublicClient.prototype.getDepth = function (market) {
+	  return request('GET', '/depth', { market: market }, null)
+	};
+
+	PublicClient.prototype.getTrades = function (market, options) {
+	  options = options || {};
+
+	  return request(
+	    'GET',
+	    '/trades',
+	    {
+	      market: market,
+	      timestamp: options.timestamp,
+	      from: options.from,
+	      to: options.to,
+	      order_by: options.order
+	    },
+	    null
+	  )
+	};
+
+	PublicClient.prototype.getCurrencyTrades = function (currency) {
+	  return request('GET', '/currency/trades', { currency: currency }, null)
 	};
 
 	var public_client = PublicClient;
@@ -661,31 +873,63 @@ var savitar = (function (exports) {
 	  return this.authorizedRequest('GET', '/members/me', null)
 	};
 
+	AuthenticatedClient.prototype.getDeposits = function (currency) {
+	  return this.authorizedRequest('GET', '/deposits', { currency: currency })
+	};
+
+	AuthenticatedClient.prototype.getOrders = function (market, options) {
+	  options = options || {};
+
+	  return this.authorizedRequest(
+	    'GET',
+	    '/orders',
+	    {
+	      market: market,
+	      state: options.state,
+	      page: options.page,
+	      order_by: options.orderBy
+	    }
+	  )
+	};
+
+	AuthenticatedClient.prototype.placeOrder = function (market, side, volume, price, orderType) {
+	  return this.authorizedRequest(
+	    'POST',
+	    '/orders',
+	    {
+	      market: market,
+	      side: side,
+	      volume: volume,
+	      price: price,
+	      ord_type: orderType
+	    }
+	  )
+	};
+
+	AuthenticatedClient.prototype.buy = function (market, volume, price, orderType) {
+	  return this.placeOrder(market, 'bid', volume, price, orderType)
+	};
+
+	AuthenticatedClient.prototype.sell = function (market, volume, price, orderType) {
+	  return this.placeOrder(market, 'sell', volume, price, orderType)
+	};
+
+	AuthenticatedClient.prototype.cancelOrder = function (orderId) {
+	  return this.authorizedRequest('POST', '/order/delete', { id: orderId })
+	};
+
+	AuthenticatedClient.prototype.getOrder = function (orderId) {
+	  return this.authorizedRequest('GET', '/order', { id: orderId })
+	};
+
+	AuthenticatedClient.prototype.cancelAllOrders = function (side) {
+	  return this.authorizedRequest('POST', '/orders/clear', { side: side })
+	};
+
 	var authenticated_client = AuthenticatedClient;
 
 	var AuthenticatedClient_1 = authenticated_client;
 	var PublicClient_1 = public_client;
-
-	// var ecKeypair = jsrsasign.KEYUTIL.generateKeypair("EC", "secp256r1");
-	// console.log('PUB KEY', ecKeypair.prvKeyObj.pubKeyHex);
-	// console.log('PRIV KEY', ecKeypair.prvKeyObj.prvKeyHex);
-
-	// PUB KEY 043335674c78c029c38903dfd8ba770eba56d436fdcf908142b213a1861f92129ab1c3682f1bdeb18424d09e52b66aa49bf10fea5602add97a1b3e03419306d904
-	// PRIV KEY d27d8fa448a75e23d9fc8c2211358a47bceb9e2ca469d564c4b539dce090a0cf
-	// APP ID : 813e47a2-db17-41e2-a5b2-c92a6e8f47cf
-
-	var client = new authenticated_client('813e47a2-db17-41e2-a5b2-c92a6e8f47cf', 'd27d8fa448a75e23d9fc8c2211358a47bceb9e2ca469d564c4b539dce090a0cf');
-	var pubClient = new public_client();
-
-	client.getAccount().then(function (data) {
-	  console.log('getAccount', data);
-	});
-	client.getMarkets().then(function (data) {
-	  console.log('getMarkets auth', data);
-	});
-	pubClient.getMarkets().then(function (data) {
-	  console.log('getMarkets', data);
-	});
 
 	var src = {
 		AuthenticatedClient: AuthenticatedClient_1,

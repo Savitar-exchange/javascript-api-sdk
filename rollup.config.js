@@ -24,7 +24,7 @@ let targets = [
       resolve(),
       commonjs()
     ],
-    external: ['isomorphic-unfetch', 'secure-random', 'jsrsasign', 'inherits']
+    external: ['isomorphic-unfetch', 'secure-random', 'jsrsasign', 'inherits', 'querystring-es3']
   },
 ]
 

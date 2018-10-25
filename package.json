@@ -18,10 +18,11 @@
   },
   "license": "ISC",
   "dependencies": {
+    "inherits": "^2.0.3",
     "isomorphic-unfetch": "^3.0.0",
     "jsrsasign": "^8.0.12",
-    "secure-random": "^1.1.1",
-    "inherits": "^2.0.3"
+    "querystring-es3": "^0.2.1",
+    "secure-random": "^1.1.1"
   },
   "devDependencies": {
     "eslint-config-standard": "^12.0.0",

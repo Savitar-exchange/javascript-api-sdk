@@ -1,5 +1,6 @@
 import jsrsasign from 'jsrsasign';
 import isomorphicUnfetch from 'isomorphic-unfetch';
+import querystringEs3 from 'querystring-es3';
 import secureRandom from 'secure-random';
 import inherits from 'inherits';
 
@@ -28,8 +29,25 @@ var utils = {
 	ecdsaSign: ecdsaSign
 };
 
-var request = function (method, path, body, token) {
+function cleanEmptyParams (params) {
+  if (params === undefined || params === null || params === {}) {
+    return null
+  }
+
+  Object.keys(params).map(function (key) {
+    var value = params[key];
+    if (value === undefined || value === null) {
+      delete params[key];
+    }
+  });
+
+  return params
+}
+
+var request = function (method, path, params, token) {
   var url = '';
+
+  params = cleanEmptyParams(params);
 
   if (path === '/sessions/generate_jwt') {
     url = 'https://auth.savitar.io/api/v1' + path;
@@ -45,7 +63,10 @@ var request = function (method, path, body, token) {
     headers['Authorization'] = 'Bearer ' + token;
   }
 
-  body = method === 'POST' ? JSON.stringify(body) : null;
+  var body = method === 'POST' ? JSON.stringify(params) : null;
+  if (method === 'GET' && params !== null) {
+    url = url + '?' + querystringEs3.stringify(params);
+  }
 
   return isomorphicUnfetch(url, {
     method: method,
@@ -65,8 +86,61 @@ var request = function (method, path, body, token) {
 function PublicClient () {
 }
 
+PublicClient.prototype.timestamp = function () {
+  return request('GET', '/timestamp', null, null)
+};
+
+PublicClient.prototype.currencies = function () {
+  return request('GET', '/currencies', null, null)
+};
+
+PublicClient.prototype.getCurrency = function (currency) {
+  return request('GET', '/currencies/' + currency, null, null)
+};
+
 PublicClient.prototype.getMarkets = function () {
   return request('GET', '/markets', null, null)
+};
+
+PublicClient.prototype.getMarketFees = function (m) {
+  return request('GET', '/fees/trading', null, null)
+};
+
+PublicClient.prototype.getTicker = function (market) {
+  return request('GET', '/tickers/' + market, null, null)
+};
+
+PublicClient.prototype.getAllTickers = function () {
+  return request('GET', '/tickers', null, null)
+};
+
+PublicClient.prototype.getOrderBook = function (market) {
+  return request('GET', '/order_book', { market: market }, null)
+};
+
+PublicClient.prototype.getDepth = function (market) {
+  return request('GET', '/depth', { market: market }, null)
+};
+
+PublicClient.prototype.getTrades = function (market, options) {
+  options = options || {};
+
+  return request(
+    'GET',
+    '/trades',
+    {
+      market: market,
+      timestamp: options.timestamp,
+      from: options.from,
+      to: options.to,
+      order_by: options.order
+    },
+    null
+  )
+};
+
+PublicClient.prototype.getCurrencyTrades = function (currency) {
+  return request('GET', '/currency/trades', { currency: currency }, null)
 };
 
 var public_client = PublicClient;
@@ -145,31 +219,63 @@ AuthenticatedClient.prototype.getAccount = function () {
   return this.authorizedRequest('GET', '/members/me', null)
 };
 
+AuthenticatedClient.prototype.getDeposits = function (currency) {
+  return this.authorizedRequest('GET', '/deposits', { currency: currency })
+};
+
+AuthenticatedClient.prototype.getOrders = function (market, options) {
+  options = options || {};
+
+  return this.authorizedRequest(
+    'GET',
+    '/orders',
+    {
+      market: market,
+      state: options.state,
+      page: options.page,
+      order_by: options.orderBy
+    }
+  )
+};
+
+AuthenticatedClient.prototype.placeOrder = function (market, side, volume, price, orderType) {
+  return this.authorizedRequest(
+    'POST',
+    '/orders',
+    {
+      market: market,
+      side: side,
+      volume: volume,
+      price: price,
+      ord_type: orderType
+    }
+  )
+};
+
+AuthenticatedClient.prototype.buy = function (market, volume, price, orderType) {
+  return this.placeOrder(market, 'bid', volume, price, orderType)
+};
+
+AuthenticatedClient.prototype.sell = function (market, volume, price, orderType) {
+  return this.placeOrder(market, 'sell', volume, price, orderType)
+};
+
+AuthenticatedClient.prototype.cancelOrder = function (orderId) {
+  return this.authorizedRequest('POST', '/order/delete', { id: orderId })
+};
+
+AuthenticatedClient.prototype.getOrder = function (orderId) {
+  return this.authorizedRequest('GET', '/order', { id: orderId })
+};
+
+AuthenticatedClient.prototype.cancelAllOrders = function (side) {
+  return this.authorizedRequest('POST', '/orders/clear', { side: side })
+};
+
 var authenticated_client = AuthenticatedClient;
 
 var AuthenticatedClient_1 = authenticated_client;
 var PublicClient_1 = public_client;
-
-// var ecKeypair = jsrsasign.KEYUTIL.generateKeypair("EC", "secp256r1");
-// console.log('PUB KEY', ecKeypair.prvKeyObj.pubKeyHex);
-// console.log('PRIV KEY', ecKeypair.prvKeyObj.prvKeyHex);
-
-// PUB KEY 043335674c78c029c38903dfd8ba770eba56d436fdcf908142b213a1861f92129ab1c3682f1bdeb18424d09e52b66aa49bf10fea5602add97a1b3e03419306d904
-// PRIV KEY d27d8fa448a75e23d9fc8c2211358a47bceb9e2ca469d564c4b539dce090a0cf
-// APP ID : 813e47a2-db17-41e2-a5b2-c92a6e8f47cf
-
-var client = new authenticated_client('813e47a2-db17-41e2-a5b2-c92a6e8f47cf', 'd27d8fa448a75e23d9fc8c2211358a47bceb9e2ca469d564c4b539dce090a0cf');
-var pubClient = new public_client();
-
-client.getAccount().then(function (data) {
-  console.log('getAccount', data);
-});
-client.getMarkets().then(function (data) {
-  console.log('getMarkets auth', data);
-});
-pubClient.getMarkets().then(function (data) {
-  console.log('getMarkets', data);
-});
 
 var src = {
 	AuthenticatedClient: AuthenticatedClient_1,

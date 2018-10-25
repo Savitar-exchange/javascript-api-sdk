@@ -78,4 +78,57 @@ AuthenticatedClient.prototype.getAccount = function () {
   return this.authorizedRequest('GET', '/members/me', null)
 }
 
+AuthenticatedClient.prototype.getDeposits = function (currency) {
+  return this.authorizedRequest('GET', '/deposits', { currency: currency })
+}
+
+AuthenticatedClient.prototype.getOrders = function (market, options) {
+  options = options || {}
+
+  return this.authorizedRequest(
+    'GET',
+    '/orders',
+    {
+      market: market,
+      state: options.state,
+      page: options.page,
+      order_by: options.orderBy
+    }
+  )
+}
+
+AuthenticatedClient.prototype.placeOrder = function (market, side, volume, price, orderType) {
+  return this.authorizedRequest(
+    'POST',
+    '/orders',
+    {
+      market: market,
+      side: side,
+      volume: volume,
+      price: price,
+      ord_type: orderType
+    }
+  )
+}
+
+AuthenticatedClient.prototype.buy = function (market, volume, price, orderType) {
+  return this.placeOrder(market, 'bid', volume, price, orderType)
+}
+
+AuthenticatedClient.prototype.sell = function (market, volume, price, orderType) {
+  return this.placeOrder(market, 'sell', volume, price, orderType)
+}
+
+AuthenticatedClient.prototype.cancelOrder = function (orderId) {
+  return this.authorizedRequest('POST', '/order/delete', { id: orderId })
+}
+
+AuthenticatedClient.prototype.getOrder = function (orderId) {
+  return this.authorizedRequest('GET', '/order', { id: orderId })
+}
+
+AuthenticatedClient.prototype.cancelAllOrders = function (side) {
+  return this.authorizedRequest('POST', '/orders/clear', { side: side })
+}
+
 module.exports = AuthenticatedClient

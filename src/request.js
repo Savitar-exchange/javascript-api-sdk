@@ -1,7 +1,25 @@
 var fetch = require('isomorphic-unfetch')
+var querystring = require('querystring-es3')
 
-module.exports = function (method, path, body, token) {
+function cleanEmptyParams (params) {
+  if (params === undefined || params === null || params === {}) {
+    return null
+  }
+
+  Object.keys(params).map(function (key) {
+    var value = params[key]
+    if (value === undefined || value === null) {
+      delete params[key]
+    }
+  })
+
+  return params
+}
+
+module.exports = function (method, path, params, token) {
   var url = ''
+
+  params = cleanEmptyParams(params)
 
   if (path === '/sessions/generate_jwt') {
     url = AUTH_API_URL + path
@@ -17,7 +35,10 @@ module.exports = function (method, path, body, token) {
     headers['Authorization'] = 'Bearer ' + token
   }
 
-  body = method === 'POST' ? JSON.stringify(body) : null
+  var body = method === 'POST' ? JSON.stringify(params) : null
+  if (method === 'GET' && params !== null) {
+    url = url + '?' + querystring.stringify(params)
+  }
 
   return fetch(url, {
     method: method,
