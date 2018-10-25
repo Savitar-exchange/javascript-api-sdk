@@ -1,5 +1,5 @@
 {
-  "name": "savitar-api-client",
+  "name": "@savitar.exchange/savitar-api-client",
   "version": "0.0.1",
   "description": "Savitar Exchange API client for browser and Node",
   "main": "dist/savitar.cjs.js",
@@ -10,12 +10,9 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/Savitar-exchange/javascript-api-sdk"
+    "url": "git+https://github.com/savitar-exchange/javascript-api-sdk.git"
   },
-  "author": {
-    "email": "jeanloup.jamet@savitar.io",
-    "name": "Jean-Loup Jamet"
-  },
+  "author": "Jean-Loup Jamet <jeanloup.jamet@savitar.io>",
   "license": "ISC",
   "dependencies": {
     "inherits": "^2.0.3",
@@ -36,5 +33,9 @@
     "rollup-plugin-node-resolve": "^3.4.0",
     "rollup-plugin-replace": "^2.1.0",
     "rollup-plugin-uglify": "^6.0.0"
-  }
+  },
+  "bugs": {
+    "url": "https://github.com/savitar-exchange/javascript-api-sdk/issues"
+  },
+  "homepage": "https://github.com/Savitar-exchange/javascript-api-sdk#readme"
 }
