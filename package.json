@@ -1,6 +1,6 @@
 {
   "name": "savitar-api-client",
-  "version": "0.0.1",
+  "version": "0.0.1a",
   "description": "Savitar Exchange API client for browser and Node",
   "main": "dist/savitar.cjs.js",
   "module": "dist/savitar.esm.js",
